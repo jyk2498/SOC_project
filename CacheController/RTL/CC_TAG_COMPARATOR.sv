@@ -31,10 +31,10 @@ module CC_TAG_COMPARATOR
 
 	always_ff@(posedge clk) begin
 		if(!rst_n) begin
-			tag_d 		<= 17'h0;
-			index_d		<= 9'h0;
-			offset_d	<= 6'h0; 
-			hs_pulse_d	<= 1'h0;
+			tag_d 		<= 17'd0;
+			index_d		<= 9'd0;
+			offset_d	<= 6'd0; 
+			hs_pulse_d	<= 1'd0;
 		end else begin
 			tag_d 		<= tag_i;
 			index_d		<= index_i;
@@ -51,7 +51,7 @@ module CC_TAG_COMPARATOR
 		miss	= 1'b0;
 
 		if(hs_pulse_d) begin
-			if((rdata_tag_i[17] == 1'b1) && (tag_d = rdata_tag_i[16 : 0])) begin
+			if((rdata_tag_i[17] == 1'b1) && (tag_d == rdata_tag_i[16 : 0])) begin
 				hit 	= 1'b1;
 				miss	= 1'b0;
 			end else begin

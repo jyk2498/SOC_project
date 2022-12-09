@@ -99,10 +99,11 @@ module CC_DATA_FILL_UNIT
                 end
             endcase
 
-            if(mem_rlast_i) begin
-                miss_addr_fifo_rden_n = 1'b1;
-            end
         end 
+
+        if(mem_rlast_i) begin
+            miss_addr_fifo_rden_n = 1'b1;
+        end
     end
 
     // output assign

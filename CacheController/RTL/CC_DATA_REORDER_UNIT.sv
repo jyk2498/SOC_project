@@ -40,7 +40,7 @@ module CC_DATA_REORDER_UNIT
     # (
         .FIFO_DEPTH(),
         .DATA_WIDTH(1),
-        .AFULL_THRESHOLD(5), // should be DEPTH - 1 !!
+        .AFULL_THRESHOLD(12), // should be DEPTH - 1 !!
         .AEMPTY_THRESHOLD()
     ) HIT_FLAG_FIFO (
         .clk(clk),
@@ -67,7 +67,7 @@ module CC_DATA_REORDER_UNIT
     # (
         .FIFO_DEPTH(), // should be HIT_FLAG_FIFO_DEPTH * 5
         .DATA_WIDTH(518),
-        .AFULL_THRESHOLD(5), // should be DEPTH - 8 !!
+        .AFULL_THRESHOLD(12), // should be DEPTH - 8 !!
         .AEMPTY_THRESHOLD()
     ) HIT_DATA_AND_OFFSET_FIFO (
         .clk(clk),
@@ -180,9 +180,9 @@ module CC_DATA_REORDER_UNIT
     end
 
     // assign output
-    assign mem_rready_o = mem_rready;
-    assign inct_rdata_o = inct_rdata;
-    assign inct_rlast   = inct_rlast;
-    assign inct_rvalid  = inct_rvalid;
+    assign mem_rready_o     = mem_rready;
+    assign inct_rdata_o     = inct_rdata;
+    assign inct_rlast_o     = inct_rlast;
+    assign inct_rvalid_o    = inct_rvalid;
 
 endmodule

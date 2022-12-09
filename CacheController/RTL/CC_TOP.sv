@@ -82,10 +82,10 @@ module CC_TOP
     wire hit_data_fifo_afull_w;
 
     // wire for tag, index, offset, hs_pulse
-    wire tag_w;
-    wire index_w;
-    wire offset_w;
-    wire hs_pulse_w;
+    wire [16 : 0] tag_w;
+    wire [8 : 0]  index_w;
+    wire [5 : 0]  offset_w;
+    wire          hs_pulse_w;
 
     CC_DECODER u_decoder(
         .inct_araddr_i          (inct_araddr_i),
@@ -102,9 +102,9 @@ module CC_TOP
     );
 
     // wire for dealyed signals
-    wire            tag_delayed_w;
-    wire            index_delayed_w;
-    wire            offset_delayed_w;
+    wire [16 : 0]   tag_delayed_w;
+    wire [8 : 0]    index_delayed_w;
+    wire [5 : 0]    offset_delayed_w;
     wire [31 : 0]   addr_delayed_cat;
 
     // wire for hit and miss
@@ -129,7 +129,7 @@ module CC_TOP
 
     // wire for miss_req_fifo
     wire miss_req_fifo_aempty_w;
-    CC_FIFO #(.FIFO_DEPTH(), .DATA_WIDTH(32), .AFULL_THRESHOLD(5)) u_miss_req_fifo(
+    CC_FIFO #(.FIFO_DEPTH(16), .DATA_WIDTH(32), .AFULL_THRESHOLD(12)) u_miss_req_fifo(
         .clk                    (clk),
         .rst_n                  (rst_n),
         .full_o                 (),
@@ -148,7 +148,7 @@ module CC_TOP
     wire            miss_addr_fifo_rden_w;
     wire [31 : 0]   miss_addr_fifo_rdata_w;
 
-    CC_FIFO #(.FIFO_DEPTH(), .DATA_WIDTH(32), .AFULL_THRESHOLD(5)) u_miss_addr_fifo(
+    CC_FIFO #(.FIFO_DEPTH(), .DATA_WIDTH(32), .AFULL_THRESHOLD(12)) u_miss_addr_fifo(
         .clk                    (clk),
         .rst_n                  (rst_n),
         .full_o                 (),
@@ -169,9 +169,9 @@ module CC_TOP
         .mem_rvalid_i               (mem_rvalid_i), 
         .mem_rready_o               (mem_rready_o), 
         .hit_flag_fifo_afull_o      (hit_flag_fifo_afull_w), 
-        .hit_flag_fifo_wren_i       (hs_pusle_w), 
+        .hit_flag_fifo_wren_i       (hs_pulse_w), 
         .hit_flag_fifo_wdata_i      (hit_w), 
-        .hit_data_fifo_afull_o      (hit_data_fifo_afull_o), 
+        .hit_data_fifo_afull_o      (hit_data_fifo_afull_w), 
         .hit_data_fifo_wren_i       (hit_w), 
         .hit_data_fifo_wdata_i      ({offset_delayed_w, rdata_data_i}), 
         .inct_rdata_o               (inct_rdata_o), 

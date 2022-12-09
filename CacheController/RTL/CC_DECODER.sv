@@ -25,8 +25,8 @@ module CC_DECODER
 
 	// if there is at least 1 FIFO is afull, then stop the decoder
 	wire atLeastoneAfull; // if this signal is one, that means there exist at least 1 afull signal
-	assign atLeastoneAfull = miss_addr_fifo_afull_i & miss_req_fifo_afull_i 
-			& hit_flag_fifo_afull_i & hit_data_fifo_afull_i;
+	assign atLeastoneAfull = miss_addr_fifo_afull_i | miss_req_fifo_afull_i 
+			| hit_flag_fifo_afull_i | hit_data_fifo_afull_i;
 
 	assign inct_arready_o = ~atLeastoneAfull;
 	assign hs_pulse_o = (~atLeastoneAfull) & inct_arvalid_i;
