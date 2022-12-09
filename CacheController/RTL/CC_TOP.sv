@@ -33,9 +33,9 @@ module CC_TOP
     // AMBA AXI interface between memory and CC (AR channel)
     output  wire    [3:0]       mem_arid_o,
     output  wire    [31:0]      mem_araddr_o,
-    output  wire    [3:0]       mem_arlen_o,
-    output  wire    [2:0]       mem_arsize_o,
-    output  wire    [1:0]       mem_arburst_o,
+    output  wire    [3:0]       mem_arlen_o, //  0111
+    output  wire    [2:0]       mem_arsize_o, // 011
+    output  wire    [1:0]       mem_arburst_o, // 10
     output  wire                mem_arvalid_o,
     input   wire                mem_arready_i,
 
@@ -75,94 +75,129 @@ module CC_TOP
         .pslverr_o      (pslverr_o)
     );
 
+    // wire for fifo afull
+    wire miss_addr_fifo_afull_w;
+    wire miss_req_fifo_afull_w;
+    wire hit_flag_fifo_afull_w;
+    wire hit_data_fifo_afull_w;
+
+    // wire for tag, index, offset, hs_pulse
+    wire tag_w;
+    wire index_w;
+    wire offset_w;
+    wire hs_pulse_w;
+
     CC_DECODER u_decoder(
-        .inct_araddr_i          (),
-        .inct_arvalid_i         (),
-        .inct_arready_o         (),
-        .miss_addr_fifo_afull_i (),
-        .miss_req_fifo_afull_i  (),
-        .hit_flag_fifo_afull_i  (),
-        .hit_data_fifo_afull_i  (),
-        .tag_o                  (),
-        .index_o                (),
-        .offset_o               (),
-        .hs_pulse_o             (),
+        .inct_araddr_i          (inct_araddr_i),
+        .inct_arvalid_i         (inct_arvalid_i),
+        .inct_arready_o         (inct_arready_o),
+        .miss_addr_fifo_afull_i (miss_addr_fifo_afull_w),
+        .miss_req_fifo_afull_i  (miss_req_fifo_afull_w),
+        .hit_flag_fifo_afull_i  (hit_flag_fifo_afull_w),
+        .hit_data_fifo_afull_i  (hit_data_fifo_afull_w),
+        .tag_o                  (tag_w),
+        .index_o                (index_w),
+        .offset_o               (offset_w),
+        .hs_pulse_o             (hs_pulse_w)
     );
 
+    // wire for dealyed signals
+    wire            tag_delayed_w;
+    wire            index_delayed_w;
+    wire            offset_delayed_w;
+    wire [31 : 0]   addr_delayed_cat;
+
+    // wire for hit and miss
+    wire hit_w;
+    wire miss_w;
+    
     CC_TAG_COMPARATOR u_tag_comparator(
         .clk                    (clk),
         .rst_n                  (rst_n),
-        .tag_i                  (),
-        .index_i                (),
-        .offset_i               (),
-        .tag_delayed_o          (),
-        .index_delayed_o        (),
-        .offset_delayed_o       (),
-        .hs_pulse_i             (),
-        .rdata_tag_i            (),
-        .hit_o                  (),
-        .miss_o                 ()
+        .tag_i                  (tag_w),
+        .index_i                (index_w),
+        .offset_i               (offset_w),
+        .tag_delayed_o          (tag_delayed_w),
+        .index_delayed_o        (index_delayed_w),
+        .offset_delayed_o       (offset_delayed_w),
+        .hs_pulse_i             (hs_pulse_w),
+        .rdata_tag_i            (rdata_tag_i),
+        .hit_o                  (hit_w),
+        .miss_o                 (miss_w)
     );
+    assign addr_delayed_cat = {tag_delayed_w, index_delayed_w, offset_delayed_w};
 
-    CC_FIFO #(.FIFO_DEPTH(), .DATA_WIDTH(), .AFULL_THRESHOLD()) u_miss_req_fifo(
+    // wire for miss_req_fifo
+    wire miss_req_fifo_aempty_w;
+    CC_FIFO #(.FIFO_DEPTH(), .DATA_WIDTH(32), .AFULL_THRESHOLD(5)) u_miss_req_fifo(
         .clk                    (clk),
         .rst_n                  (rst_n),
         .full_o                 (),
-        .afull_o                (), 
-        .wren_i                 (), 
-        .wdata_i                (), 
+        .afull_o                (miss_req_fifo_afull_w), 
+        .wren_i                 (miss_w), 
+        .wdata_i                (addr_delayed_cat), 
         .empty_o                (), 
-        .aempty_o               (),
-        .rden_i                 (), 
-        .rdata_o                (), 
+        .aempty_o               (miss_req_fifo_aempty_w),
+        .rden_i                 (mem_arready_i & mem_arvalid_o), // problem? 
+        .rdata_o                (mem_araddr_o) 
     );
+    assign mem_arvalid_o = ~miss_req_fifo_aempty_w;
 
-    CC_FIFO #(.FIFO_DEPTH(), .DATA_WIDTH(), .AFULL_THRESHOLD()) u_miss_addr_fifo(
+    // wire for miss_addr_fifo
+    wire            miss_addr_fifo_aempty_w;
+    wire            miss_addr_fifo_rden_w;
+    wire [31 : 0]   miss_addr_fifo_rdata_w;
+
+    CC_FIFO #(.FIFO_DEPTH(), .DATA_WIDTH(32), .AFULL_THRESHOLD(5)) u_miss_addr_fifo(
         .clk                    (clk),
         .rst_n                  (rst_n),
         .full_o                 (),
-        .afull_o                (), 
-        .wren_i                 (), 
-        .wdata_i                (), 
+        .afull_o                (miss_addr_fifo_afull_w), 
+        .wren_i                 (miss_w), 
+        .wdata_i                (addr_delayed_cat), 
         .empty_o                (), 
-        .aempty_o               (),
-        .rden_i                 (), 
-        .rdata_o                ()
+        .aempty_o               (miss_addr_fifo_aempty_w),
+        .rden_i                 (miss_addr_fifo_rden_w), 
+        .rdata_o                (miss_addr_fifo_rdata_w)
     );
 
     CC_DATA_REORDER_UNIT    u_data_reorder_unit(
         .clk                        (clk),   
         .rst_n                      (rst_n), 
-        .mem_rdata_i                (), 
-        .mem_rlast_i                (), 
-        .mem_rvalid_i               (), 
-        .mem_rready_o               (), 
-        .hit_flag_fifo_afull_o      (), 
-        .hit_flag_fifo_wren_i       (), 
-        .hit_flag_fifo_wdata_i      (), 
-        .hit_data_fifo_afull_o      (), 
-        .hit_data_fifo_wren_i       (), 
-        .hit_data_fifo_wdata_i      (), 
-        .inct_rdata_o               (), 
-        .inct_rlast_o               (), 
-        .inct_rvalid_o              (), 
-        .inct_rready_i              ()
+        .mem_rdata_i                (mem_rdata_i), 
+        .mem_rlast_i                (mem_rlast_i), 
+        .mem_rvalid_i               (mem_rvalid_i), 
+        .mem_rready_o               (mem_rready_o), 
+        .hit_flag_fifo_afull_o      (hit_flag_fifo_afull_w), 
+        .hit_flag_fifo_wren_i       (hs_pusle_w), 
+        .hit_flag_fifo_wdata_i      (hit_w), 
+        .hit_data_fifo_afull_o      (hit_data_fifo_afull_o), 
+        .hit_data_fifo_wren_i       (hit_w), 
+        .hit_data_fifo_wdata_i      ({offset_delayed_w, rdata_data_i}), 
+        .inct_rdata_o               (inct_rdata_o), 
+        .inct_rlast_o               (inct_rlast_o), 
+        .inct_rvalid_o              (inct_rvalid_o), 
+        .inct_rready_i              (inct_rready_i)
     );
 
     CC_DATA_FILL_UNIT       u_data_fill_unit(
         .clk                        (clk),
         .rst_n                      (rst_n),
-        .mem_rdata_i                (), 
-        .mem_rlast_i                (), 
-        .mem_rvalid_i               (), 
-        .mem_rready_i               (),
-        .miss_addr_fifo_empty_i     (), 
-        .miss_addr_fifo_rdata_i     (), 
-        .miss_addr_fifo_rden_o      (), 
-        .wren_o                     (), 
-        .waddr_o                    (), 
-        .wdata_tag_o                (),    
-        .wdata_data_o               ()
+        .mem_rdata_i                (mem_rdata_i), 
+        .mem_rlast_i                (mem_rlast_i), 
+        .mem_rvalid_i               (mem_rvalid_i), 
+        .mem_rready_i               (mem_rready_i),
+        .miss_addr_fifo_empty_i     (miss_addr_fifo_aempty_w), 
+        .miss_addr_fifo_rdata_i     (miss_addr_fifo_rdata_w), 
+        .miss_addr_fifo_rden_o      (miss_addr_fifo_rden_w), 
+        .wren_o                     (wren_o), 
+        .waddr_o                    (waddr_o), 
+        .wdata_tag_o                (wdata_tag_o),    
+        .wdata_data_o               (wdata_data_o)
     );
+
+    assign mem_arlen_o      = 4'b0111;
+    assign mem_arsize_o     = 3'b011;
+    assign mem_arburst_o    = 2'b10;
 
 endmodule
