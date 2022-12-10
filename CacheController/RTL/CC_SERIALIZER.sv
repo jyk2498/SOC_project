@@ -43,7 +43,7 @@ module CC_SERIALIZER
 	end
 
 	wire serializer_enabler;
-	assign serializer_enabler = !fifo_empty_i & rready_i; 	
+	assign serializer_enabler = !fifo_aempty_i & rready_i; 	
 
 	// Making cnt
 	always_comb begin
@@ -56,7 +56,7 @@ module CC_SERIALIZER
 
 	// Making fifo_rden
 	always_comb begin
-		if(cnt == 3'b111 && serializer_enabler) begin
+		if(cnt == 3'b110 && serializer_enabler) begin
 			fifo_rden_n = 1'b1;
 		end else begin
 			fifo_rden_n = 1'b0;
@@ -64,8 +64,8 @@ module CC_SERIALIZER
 	end
 
 	// Making rdata_n
-	wire cntaddcriticaloffset;
-	assign cntaddcriticaloffset = cnt + fifo_rdata_i[517 : 512];
+	wire [2 : 0] cntaddcriticaloffset;
+	assign cntaddcriticaloffset = cnt + fifo_rdata_i[517 : 515];
 
 	always_comb begin
 		rdata_n = rdata; // preventing latch

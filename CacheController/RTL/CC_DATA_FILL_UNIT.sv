@@ -69,7 +69,7 @@ module CC_DATA_FILL_UNIT
         if(mem_rready_i & mem_rvalid_i & !miss_addr_fifo_empty_i) begin
             wren_n                  = 1'b1;
             cnt_n                   = cnt + 1'd1;
-            wdata_tag_n             = miss_addr_fifo_rdata_i[31 : 15];
+            wdata_tag_n             = {1'b1, miss_addr_fifo_rdata_i[31 : 15]}; // with valid bit
             waddr_n                 = miss_addr_fifo_rdata_i[14 : 6];
 
             case(wrptr)

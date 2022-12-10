@@ -100,11 +100,14 @@ module CC_TOP
         .offset_o               (offset_w),
         .hs_pulse_o             (hs_pulse_w)
     );
+    assign rden_o = hs_pulse_w;
+    assign raddr_o = index_w;
 
     // wire for dealyed signals
     wire [16 : 0]   tag_delayed_w;
     wire [8 : 0]    index_delayed_w;
     wire [5 : 0]    offset_delayed_w;
+    wire            hs_pulse_delayed_w;
     wire [31 : 0]   addr_delayed_cat;
 
     // wire for hit and miss
@@ -120,6 +123,7 @@ module CC_TOP
         .tag_delayed_o          (tag_delayed_w),
         .index_delayed_o        (index_delayed_w),
         .offset_delayed_o       (offset_delayed_w),
+        .hs_pulse_delayed_o     (hs_pulse_delayed_w),
         .hs_pulse_i             (hs_pulse_w),
         .rdata_tag_i            (rdata_tag_i),
         .hit_o                  (hit_w),
@@ -161,15 +165,16 @@ module CC_TOP
         .rdata_o                (miss_addr_fifo_rdata_w)
     );
 
+    wire mem_rready_w;
     CC_DATA_REORDER_UNIT    u_data_reorder_unit(
         .clk                        (clk),   
         .rst_n                      (rst_n), 
         .mem_rdata_i                (mem_rdata_i), 
         .mem_rlast_i                (mem_rlast_i), 
         .mem_rvalid_i               (mem_rvalid_i), 
-        .mem_rready_o               (mem_rready_o), 
+        .mem_rready_o               (mem_rready_w), 
         .hit_flag_fifo_afull_o      (hit_flag_fifo_afull_w), 
-        .hit_flag_fifo_wren_i       (hs_pulse_w), 
+        .hit_flag_fifo_wren_i       (hs_pulse_delayed_w), 
         .hit_flag_fifo_wdata_i      (hit_w), 
         .hit_data_fifo_afull_o      (hit_data_fifo_afull_w), 
         .hit_data_fifo_wren_i       (hit_w), 
@@ -186,7 +191,7 @@ module CC_TOP
         .mem_rdata_i                (mem_rdata_i), 
         .mem_rlast_i                (mem_rlast_i), 
         .mem_rvalid_i               (mem_rvalid_i), 
-        .mem_rready_i               (mem_rready_i),
+        .mem_rready_i               (mem_rready_w),
         .miss_addr_fifo_empty_i     (miss_addr_fifo_aempty_w), 
         .miss_addr_fifo_rdata_i     (miss_addr_fifo_rdata_w), 
         .miss_addr_fifo_rden_o      (miss_addr_fifo_rden_w), 
@@ -199,5 +204,7 @@ module CC_TOP
     assign mem_arlen_o      = 4'b0111;
     assign mem_arsize_o     = 3'b011;
     assign mem_arburst_o    = 2'b10;
+    assign mem_rready_o     = mem_rready_w;
 
+    assign inct_rresp_o     = 2'b00;
 endmodule

@@ -11,6 +11,7 @@ module CC_TAG_COMPARATOR
 	output	wire	[16:0]	tag_delayed_o,
 	output	wire	[8:0]	index_delayed_o,
 	output	wire	[5:0]	offset_delayed_o,
+	output  wire			hs_pulse_delayed_o,
 
 	input	wire			hs_pulse_i,
 
@@ -62,9 +63,10 @@ module CC_TAG_COMPARATOR
 	end
 
 	//output assign
-	assign tag_delayed_o 	= tag_d;
-	assign index_delayed_o 	= index_d;
-	assign offset_delayed_o	= offset_d;
+	assign tag_delayed_o 		= tag_d;
+	assign index_delayed_o 		= index_d;
+	assign offset_delayed_o		= offset_d;
+	assign hs_pulse_delayed_o 	= hs_pulse_d;
 
 	assign hit_o 			= hit;
 	assign miss_o 			= miss;
