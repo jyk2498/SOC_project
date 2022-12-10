@@ -201,10 +201,13 @@ module CC_TOP
         .wdata_data_o               (wdata_data_o)
     );
 
+    // AXI IF
+    assign mem_arid_o = 4'd0;
     assign mem_arlen_o      = 4'b0111;
     assign mem_arsize_o     = 3'b011;
     assign mem_arburst_o    = 2'b10;
     assign mem_rready_o     = mem_rready_w;
 
     assign inct_rresp_o     = 2'b00;
+    assign inct_rid_o       = 4'd0;
 endmodule
